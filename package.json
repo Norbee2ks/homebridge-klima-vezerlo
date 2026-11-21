@@ -1,0 +1,13 @@
+{
+  "name": "homebridge-klima-vezerlo",
+  "displayName": "Klíma vezérlő",
+  "version": "0.1.0",
+  "description": "Szobaszenzor-alapú, naplózó klímavezérlés Homebridge-hez (Midea HeaterCooler), Melegem van / Fázok gombokkal.",
+  "main": "index.js",
+  "license": "MIT",
+  "private": true,
+  "keywords": ["homebridge-plugin"],
+  "engines": { "homebridge": "^1.8.0 || ^2.0.0", "node": ">=18" },
+  "files": ["index.js", "lib", "config.schema.json", "README.md"],
+  "scripts": { "test": "node test/run-tests.js" }
+}
