@@ -136,15 +136,32 @@ class KlimaVezerloPlatform {
       }
     }
 
-    // Kinti hőmérséklet (a klíma kültéri egységének érzékelője)
+    // Kinti hőmérséklet (a klíma kültéri egységének érzékelője).
+    // Alapból termosztát-csempeként (kikapcsolt állapotban), mert a Home a sima hőérzékelőnek nem ad csempét.
     if (this.config.outdoorTile !== false) {
-      const oacc = this.getAccessory('outdoor:1', this.config.outdoorName || 'Kinti hőmérséklet', wanted);
-      this.outdoorSvc = oacc.getService(S.TemperatureSensor) || oacc.addService(S.TemperatureSensor, this.config.outdoorName || 'Kinti hőmérséklet');
-      this.outdoorSvc.getCharacteristic(C.CurrentTemperature).setProps({ minValue: -40, maxValue: 60, minStep: 0.1 })
-        .onGet(() => {
-          if (typeof this.outdoor !== 'number') throw new this.hapTypes.HapStatusError(this.hapTypes.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-          return this.outdoor;
-        });
+      const oname = this.config.outdoorName || 'Kinti hőmérséklet';
+      const oacc = this.getAccessory('outdoor:1', oname, wanted);
+      const asSensor = this.config.outdoorStyle === 'sensor';
+      const drop = asSensor ? oacc.getService(S.Thermostat) : oacc.getService(S.TemperatureSensor);
+      if (drop) oacc.removeService(drop);
+      const outGet = () => {
+        if (typeof this.outdoor !== 'number') throw new this.hapTypes.HapStatusError(this.hapTypes.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+        return this.outdoor;
+      };
+      if (asSensor) {
+        this.outdoorSvc = oacc.getService(S.TemperatureSensor) || oacc.addService(S.TemperatureSensor, oname);
+        this.outdoorSvc.getCharacteristic(C.CurrentTemperature).setProps({ minValue: -40, maxValue: 60, minStep: 0.1 }).onGet(outGet);
+      } else {
+        const t = oacc.getService(S.Thermostat) || oacc.addService(S.Thermostat, oname);
+        this.outdoorSvc = t;
+        t.getCharacteristic(C.CurrentTemperature).setProps({ minValue: -40, maxValue: 60, minStep: 0.1 }).onGet(outGet);
+        t.getCharacteristic(C.TargetHeatingCoolingState).updateValue(C.TargetHeatingCoolingState.OFF)
+          .setProps({ validValues: [C.TargetHeatingCoolingState.OFF] })
+          .onGet(() => C.TargetHeatingCoolingState.OFF).onSet(() => {});
+        t.getCharacteristic(C.CurrentHeatingCoolingState).onGet(() => C.CurrentHeatingCoolingState.OFF);
+        t.getCharacteristic(C.TargetTemperature).updateValue(20).onGet(() => 20).onSet(() => {});
+        t.getCharacteristic(C.TemperatureDisplayUnits).onGet(() => C.TemperatureDisplayUnits.CELSIUS);
+      }
     }
 
     // régi, már nem használt kiegészítők törlése

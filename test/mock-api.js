@@ -37,6 +37,7 @@ module.exports = (storage) => {
     constructor(name, uuid) { this.displayName = name; this.UUID = uuid; this.services = [new Svc('AccessoryInformation')]; }
     getService(t) { return this.services.find(s => s.type === t); }
     addService(t, name) { const s = new Svc(t, name); this.services.push(s); return s; }
+    removeService(s) { this.services = this.services.filter(x => x !== s); }
   }
 
   const api = new EventEmitter();

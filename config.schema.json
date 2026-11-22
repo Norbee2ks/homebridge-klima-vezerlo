@@ -150,6 +150,24 @@
       "outdoorSource": {
         "title": "Kinti hő forrása (szoba azonosító, pl. nappali)",
         "type": "string"
+      },
+      "outdoorStyle": {
+        "title": "Kinti csempe típusa",
+        "type": "string",
+        "oneOf": [
+          {
+            "title": "Termosztát-csempe (látható)",
+            "enum": [
+              "thermostat"
+            ]
+          },
+          {
+            "title": "Sima érzékelő",
+            "enum": [
+              "sensor"
+            ]
+          }
+        ]
       }
     }
   }
