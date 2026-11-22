@@ -146,6 +146,10 @@
       "outdoorName": {
         "title": "Kinti csempe neve",
         "type": "string"
+      },
+      "outdoorSource": {
+        "title": "Kinti hő forrása (szoba azonosító, pl. nappali)",
+        "type": "string"
       }
     }
   }

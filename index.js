@@ -358,7 +358,11 @@ class KlimaVezerloPlatform {
       try {
         a = await hap.readAc(ac);
         ac.last = a;
-        if (typeof a.outdoor === 'number') {
+        // Kinti hő: egy rögzített klímáról (alapból az első szoba, pl. Nappali); ha az nem ad értéket, bármelyikről.
+        const src = this.config.outdoorSource || this.rooms[0].id;
+        const srcAc = this.acs[src];
+        const srcOk = srcAc && srcAc.last && typeof srcAc.last.outdoor === 'number';
+        if (typeof a.outdoor === 'number' && (room.id === src || !srcOk)) {
           this.outdoor = a.outdoor;
           if (this.outdoorSvc) this.outdoorSvc.updateCharacteristic(this.hapTypes.Characteristic.CurrentTemperature, a.outdoor);
         }
