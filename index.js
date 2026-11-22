@@ -43,9 +43,7 @@ class KlimaVezerloPlatform {
     this.cached = new Map();
     this.mode = this.config.mode === 'eles' ? 'eles' : 'megfigyelo';
     this.opts = { ...logic.DEFAULTS, ...(this.config.tuning || {}) };
-    this.rooms = (Array.isArray(this.config.rooms) && this.config.rooms.length ? this.config.rooms : DEFAULT_ROOMS)
-      .map(r => ({ ...r, schedule: r.schedule || DEFAULT_ROOMS[0].schedule }));
-    for (const r of this.rooms) r.schedule.forEach(p => logic.parseHHMM(p.start)); // korai hibajelzés
+    this.rooms = this.validRooms(this.config.rooms);
 
     this.storage = api.user.storagePath();
     this.statePath = path.join(this.storage, 'klima-vezerlo-state.json');
@@ -58,6 +56,20 @@ class KlimaVezerloPlatform {
 
     api.on('didFinishLaunching', () => this.start());
     api.on('shutdown', () => this.saveState(true));
+  }
+
+  // Hiányos/hibás szoba- és menetrend-beállításnál nem áll le: a hibás elemet kihagyja, és az alapértéket használja.
+  validRooms(cfgRooms) {
+    const okPeriod = p => p && typeof p.start === 'string' && /^\d{1,2}:\d{2}$/.test(p.start.trim()) && typeof p.target === 'number';
+    const out = [];
+    for (const r of Array.isArray(cfgRooms) ? cfgRooms : []) {
+      if (!r || !r.id || !r.acName) { this.log.warn(`Hiányos szoba-beállítás kihagyva: ${JSON.stringify(r)}`); continue; }
+      const def = DEFAULT_ROOMS.find(d => d.id === r.id) || DEFAULT_ROOMS[0];
+      const sch = Array.isArray(r.schedule) ? r.schedule.filter(okPeriod) : [];
+      out.push({ ...def, ...r, name: r.name || def.name || r.id, schedule: sch.length ? sch : def.schedule });
+    }
+    if (!out.length) return DEFAULT_ROOMS.map(r => ({ ...r }));
+    return out;
   }
 
   configureAccessory(acc) { this.cached.set(acc.UUID, acc); }

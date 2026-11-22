@@ -6,34 +6,139 @@
   "schema": {
     "type": "object",
     "properties": {
-      "name": { "title": "Név", "type": "string", "default": "Klíma vezérlő" },
-      "mode": { "title": "Mód", "type": "string", "default": "megfigyelo",
-        "oneOf": [ { "title": "Megfigyelő (csak naplóz)", "enum": ["megfigyelo"] }, { "title": "Éles (állítja a klímát)", "enum": ["eles"] } ] },
-      "webhookPort": { "title": "Szenzor-webhook port", "type": "integer", "default": 51828 },
-      "forwardUrl": { "title": "Továbbítás régi webhooks pluginnak (pl. http://127.0.0.1:51830)", "type": "string" },
-      "hapPort": { "title": "HAP port (üresen: automatikus a config.json-ból)", "type": "integer" },
-      "hapPin": { "title": "HAP PIN (üresen: automatikus)", "type": "string" },
-      "rooms": {
-        "title": "Szobák", "type": "array",
-        "items": { "type": "object", "properties": {
-          "id": { "title": "Azonosító (ESP accessoryId előtag)", "type": "string", "required": true },
-          "name": { "title": "Csempe neve", "type": "string", "required": true },
-          "acName": { "title": "Klíma neve a Home-ban", "type": "string", "required": true },
-          "buttons": { "title": "Melegem van / Fázok gombok", "type": "boolean", "default": false },
-          "initialBias": { "title": "Kezdő eltolás (klíma − szoba, °C)", "type": "number", "default": 0 },
-          "schedule": { "title": "Menetrend", "type": "array", "items": { "type": "object", "properties": {
-            "start": { "title": "Kezdés (ÓÓ:PP)", "type": "string", "required": true },
-            "target": { "title": "Szoba-cél °C", "type": "number", "required": true },
-            "night": { "title": "Éjszaka (Sleep, csend)", "type": "boolean", "default": false }
-          } } }
-        } }
+      "name": {
+        "title": "Név",
+        "type": "string",
+        "default": "Klíma vezérlő"
       },
-      "tuning": { "title": "Hangolás (haladó)", "type": "object", "properties": {
-        "kp": { "type": "number" }, "fanHigh": { "type": "integer" }, "fanMid": { "type": "integer" },
-        "fanNear": { "type": "integer" }, "fanNightMax": { "type": "integer" },
-        "frostLimit": { "type": "number" }, "minCommandIntervalMin": { "type": "integer" },
-        "buttonStep": { "type": "number" }, "offsetMax": { "type": "number" }, "staleMin": { "type": "integer" }
-      } }
+      "mode": {
+        "title": "Mód",
+        "type": "string",
+        "default": "megfigyelo",
+        "oneOf": [
+          {
+            "title": "Megfigyelő (csak naplóz)",
+            "enum": [
+              "megfigyelo"
+            ]
+          },
+          {
+            "title": "Éles (állítja a klímát)",
+            "enum": [
+              "eles"
+            ]
+          }
+        ]
+      },
+      "webhookPort": {
+        "title": "Szenzor-webhook port",
+        "type": "integer",
+        "default": 51828
+      },
+      "forwardUrl": {
+        "title": "Továbbítás régi webhooks pluginnak (pl. http://127.0.0.1:51830)",
+        "type": "string"
+      },
+      "hapPort": {
+        "title": "HAP port (üresen: automatikus a config.json-ból)",
+        "type": "integer"
+      },
+      "hapPin": {
+        "title": "HAP PIN (üresen: automatikus)",
+        "type": "string"
+      },
+      "rooms": {
+        "title": "Szobák",
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "title": "Azonosító (ESP accessoryId előtag)",
+              "type": "string",
+              "required": true
+            },
+            "name": {
+              "title": "Csempe neve",
+              "type": "string",
+              "required": true
+            },
+            "acName": {
+              "title": "Klíma neve a Home-ban",
+              "type": "string",
+              "required": true
+            },
+            "buttons": {
+              "title": "Melegem van / Fázok gombok",
+              "type": "boolean"
+            },
+            "initialBias": {
+              "title": "Kezdő eltolás (klíma − szoba, °C)",
+              "type": "number"
+            },
+            "schedule": {
+              "title": "Menetrend",
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "start": {
+                    "title": "Kezdés (ÓÓ:PP)",
+                    "type": "string",
+                    "required": true
+                  },
+                  "target": {
+                    "title": "Szoba-cél °C",
+                    "type": "number",
+                    "required": true
+                  },
+                  "night": {
+                    "title": "Éjszaka (Sleep, csend)",
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "description": "Üresen hagyva a beépített nappali/háló beállítás érvényes."
+      },
+      "tuning": {
+        "title": "Hangolás (haladó)",
+        "type": "object",
+        "properties": {
+          "kp": {
+            "type": "number"
+          },
+          "fanHigh": {
+            "type": "integer"
+          },
+          "fanMid": {
+            "type": "integer"
+          },
+          "fanNear": {
+            "type": "integer"
+          },
+          "fanNightMax": {
+            "type": "integer"
+          },
+          "frostLimit": {
+            "type": "number"
+          },
+          "minCommandIntervalMin": {
+            "type": "integer"
+          },
+          "buttonStep": {
+            "type": "number"
+          },
+          "offsetMax": {
+            "type": "number"
+          },
+          "staleMin": {
+            "type": "integer"
+          }
+        }
+      }
     }
   }
 }
