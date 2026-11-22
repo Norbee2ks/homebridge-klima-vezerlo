@@ -109,8 +109,8 @@ const SCH = [{ start: '06:30', target: 23 }, { start: '17:00', target: 24 }, { s
   await new Promise(r => setTimeout(r, 300));
 
   await t('kiegészítők létrejöttek (szoba + 2 gomb)', () => {
-    assert.strictEqual(api.registered.length, 3);
-    assert.deepStrictEqual(api.registered.map(a => a.displayName).sort(), ['Fázok', 'Melegem van', 'Nappali szoba']);
+    assert.strictEqual(api.registered.length, 4);
+    assert.deepStrictEqual(api.registered.map(a => a.displayName).sort(), ['Fázok', 'Kinti hőmérséklet', 'Melegem van', 'Nappali szoba']);
   });
   const get = (p) => new Promise((res, rej) => http.get(`http://127.0.0.1:${webhookPort}${p}`, r => { r.resume(); res(r.statusCode); }).on('error', rej));
   await t('webhook: 200 ismert, 404 ismeretlen', async () => {
@@ -131,6 +131,10 @@ const SCH = [{ start: '06:30', target: 23 }, { start: '17:00', target: 24 }, { s
     await platform.discover();
     const ac = platform.acs.nappali;
     assert.ok(ac && ac.refs.outdoor && ac.refs.sleep);
+  });
+  await t('kinti hőmérséklet csempe', async () => {
+    await platform.tick(room, {});
+    assert.strictEqual(await platform.outdoorSvc.getCharacteristic(api.hap.Characteristic.CurrentTemperature).get(), 4.5);
   });
   await t('éles mód: parancs a számolt beállításra', async () => {
     platform.st(room).lastCmdAt = 0;

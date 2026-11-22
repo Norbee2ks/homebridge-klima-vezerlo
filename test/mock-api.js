@@ -31,7 +31,7 @@ module.exports = (storage) => {
     setPrimaryService() {}
   }
   const S = {};
-  for (const n of ['Thermostat', 'Battery', 'Switch', 'AccessoryInformation']) S[n] = n;
+  for (const n of ['Thermostat', 'Battery', 'Switch', 'AccessoryInformation', 'TemperatureSensor']) S[n] = n;
 
   class PlatformAccessory {
     constructor(name, uuid) { this.displayName = name; this.UUID = uuid; this.services = [new Svc('AccessoryInformation')]; }

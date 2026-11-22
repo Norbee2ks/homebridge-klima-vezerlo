@@ -136,6 +136,17 @@ class KlimaVezerloPlatform {
       }
     }
 
+    // Kinti hőmérséklet (a klíma kültéri egységének érzékelője)
+    if (this.config.outdoorTile !== false) {
+      const oacc = this.getAccessory('outdoor:1', this.config.outdoorName || 'Kinti hőmérséklet', wanted);
+      this.outdoorSvc = oacc.getService(S.TemperatureSensor) || oacc.addService(S.TemperatureSensor, this.config.outdoorName || 'Kinti hőmérséklet');
+      this.outdoorSvc.getCharacteristic(C.CurrentTemperature).setProps({ minValue: -40, maxValue: 60, minStep: 0.1 })
+        .onGet(() => {
+          if (typeof this.outdoor !== 'number') throw new this.hapTypes.HapStatusError(this.hapTypes.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+          return this.outdoor;
+        });
+    }
+
     // régi, már nem használt kiegészítők törlése
     const stale = [...this.cached.values()].filter(a => !wanted.has(a.UUID));
     if (stale.length) this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, stale);
@@ -347,7 +358,10 @@ class KlimaVezerloPlatform {
       try {
         a = await hap.readAc(ac);
         ac.last = a;
-        if (typeof a.outdoor === 'number') this.outdoor = a.outdoor;
+        if (typeof a.outdoor === 'number') {
+          this.outdoor = a.outdoor;
+          if (this.outdoorSvc) this.outdoorSvc.updateCharacteristic(this.hapTypes.Characteristic.CurrentTemperature, a.outdoor);
+        }
       } catch (e) { this.throttledError('read_' + room.id, `[${room.name}] klíma olvasási hiba: ${e.message}`); }
     }
 

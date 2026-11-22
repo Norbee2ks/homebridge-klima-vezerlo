@@ -138,6 +138,14 @@
             "type": "integer"
           }
         }
+      },
+      "outdoorTile": {
+        "title": "Kinti hőmérséklet csempe",
+        "type": "boolean"
+      },
+      "outdoorName": {
+        "title": "Kinti csempe neve",
+        "type": "string"
       }
     }
   }
