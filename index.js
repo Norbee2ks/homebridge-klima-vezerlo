@@ -224,7 +224,7 @@ class KlimaVezerloPlatform {
       szobaho: this.isFresh(st) ? st.temp : null, para: st.hum, akku: st.batt, kulso: this.outdoor,
       menetrend_cel: rt.target, eltolas: st.offset, szoba_cel: rt.roomTarget, tanult: st.bias,
       klima_akt_cel: a ? a.heat : null, klima_sajat_ho: a ? a.cur : null, vent_akt: a ? a.fan : null,
-      klima_be: a ? a.active : null,
+      klima_be: a ? a.active : null, lap_poz: a ? a.louverPos : null, lap_szog: a ? a.louverTilt : null,
       ...extra,
     });
   }
@@ -237,6 +237,7 @@ class KlimaVezerloPlatform {
       let u;
       try { u = new URL(req.url, 'http://x'); } catch (_) { res.writeHead(400); return res.end(); }
       if (fwd) this.forward(fwd, req.url);
+      if (u.pathname.startsWith('/naplo')) return this.serveLog(u, res);
       const id = u.searchParams.get('accessoryId');
       const value = Number(u.searchParams.get('value'));
       const m = id && /^(.+)_(hom|para|akku)$/.exec(id);
@@ -254,6 +255,22 @@ class KlimaVezerloPlatform {
       else this.log.error(`Webhook szerver hiba: ${e.message}`);
     });
     this.server.listen(port, '0.0.0.0', () => this.log.info(`Szenzor-webhook figyel: ${port}${fwd ? ` (továbbítás: ${fwd.origin})` : ''}`));
+  }
+
+  // Napló letöltése böngészőből: http://homebridge.local:51828/naplo
+  serveLog(u, res) {
+    const files = this.csv.list();
+    const want = u.searchParams.get('f');
+    if (want && files.includes(want)) {
+      res.writeHead(200, { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': `attachment; filename="${want}"` });
+      return fs.createReadStream(path.join(this.csv.dir, want)).pipe(res);
+    }
+    const items = files.map(f => {
+      let kb = 0; try { kb = Math.round(fs.statSync(path.join(this.csv.dir, f)).size / 1024); } catch (_) { /* */ }
+      return `<li><a href="/naplo?f=${encodeURIComponent(f)}">${f}</a> (${kb} KB)</li>`;
+    }).join('');
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(`<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Klíma napló</title><body style="font:18px -apple-system,sans-serif;padding:16px"><h2>Klíma napló</h2><ul style="line-height:2">${items || '<li>Még nincs napló.</li>'}</ul><p style="color:#666">Mód: ${this.mode}. Koppints egy fájlra a letöltéshez.</p></body>`);
   }
 
   forward(fwd, reqUrl) {
@@ -334,7 +351,7 @@ class KlimaVezerloPlatform {
         const ac = await hap.discoverAc(targets, room.acName, this.log);
         if (ac) {
           this.acs[room.id] = ac;
-          this.log.info(`[${room.name}] klíma megtalálva: „${room.acName}” (port ${ac.port}, aid ${ac.aid}, outdoor: ${ac.refs.outdoor ? 'igen' : 'nem'}, sleep: ${ac.refs.sleep ? 'igen' : 'nem'})`);
+          this.log.info(`[${room.name}] klíma megtalálva: „${room.acName}” (port ${ac.port}, aid ${ac.aid}, outdoor: ${ac.refs.outdoor ? 'igen' : 'nem'}, sleep: ${ac.refs.sleep ? 'igen' : 'nem'}, lap: ${ac.refs.louverPos ? 'igen' : 'nem'})`);
         } else missing++;
       } catch (e) { missing++; }
     }
@@ -468,6 +485,19 @@ class KlimaVezerloPlatform {
             this.row(room, 'parancs', { klima_javasolt_cel: d.setpoint, vent_javasolt: d.fan, megjegyzes: reason });
           } catch (e) { this.throttledError('write_' + room.id, `[${room.name}] klíma írási hiba: ${e.message}`); }
         }
+      }
+    }
+
+    // 7b) légterelő lap rögzítése (ha be van állítva) – minden módban, mert ez nem szabályozás, csak beállítás tartása
+    const lv = this.config.louver && this.config.louver[room.id];
+    if (ac && a && typeof lv === 'number' && ac.refs.louverPos && typeof a.louverPos === 'number' && a.active === 1) {
+      if (Math.abs(a.louverPos - lv) >= 1 && now - (st.lastLouverAt || 0) >= 2 * 60000) {
+        try {
+          await hap.writeAc(ac, { louverPos: lv });
+          st.lastLouverAt = now;
+          this.log.info(`[${room.name}] légterelő lap visszaállítva: ${a.louverPos}% → ${lv}%`);
+          this.row(room, 'lap', { megjegyzes: `${a.louverPos} -> ${lv}` });
+        } catch (e) { this.throttledError('louver_' + room.id, `[${room.name}] lap írási hiba: ${e.message}`); }
       }
     }
 

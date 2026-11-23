@@ -168,6 +168,24 @@
             ]
           }
         ]
+      },
+      "louver": {
+        "title": "Légterelő lap rögzítése (%, üresen: nem nyúl hozzá)",
+        "type": "object",
+        "properties": {
+          "nappali": {
+            "title": "Nappali lap %",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "halo": {
+            "title": "Háló lap %",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          }
+        }
       }
     }
   }

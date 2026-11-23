@@ -60,7 +60,7 @@ const SCH = [{ start: '06:30', target: 23 }, { start: '17:00', target: 24 }, { s
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'kv-'));
   const PIN = '111-22-333';
   // mock HAP szerver: egy Midea-szerű klíma
-  const chars = { '2.10': 1, '2.11': 22.0, '2.12': 23, '2.13': 1, '2.14': 41, '2.21': 4.5, '2.31': false };
+  const chars = { '2.10': 1, '2.11': 22.0, '2.12': 23, '2.13': 1, '2.14': 41, '2.21': 4.5, '2.31': false, '2.41': 0, '2.42': 0 };
   const writes = [];
   const hapSrv = http.createServer((req, res) => {
     if (req.headers.authorization !== PIN) { res.writeHead(470); return res.end(); }
@@ -74,6 +74,7 @@ const SCH = [{ start: '06:30', target: 23 }, { start: '17:00', target: 24 }, { s
           { iid: 12, type: '12', value: 23 }, { iid: 13, type: 'B2', value: 1 }, { iid: 14, type: '29', value: 41 } ] },
         { iid: 20, type: '8A', characteristics: [{ iid: 19, type: '23', value: 'Outdoor' }, { iid: 21, type: '11', value: 4.5 }] },
         { iid: 30, type: '49', characteristics: [{ iid: 29, type: '23', value: 'Sleep' }, { iid: 31, type: '25', value: false }] },
+        { iid: 40, type: '8C', characteristics: [{ iid: 39, type: '23', value: 'Swing' }, { iid: 41, type: '7C', value: 0 }, { iid: 42, type: '7D', value: 0 }] },
       ] }] }));
     }
     if (req.method === 'GET' && req.url.startsWith('/characteristics')) {
@@ -102,6 +103,7 @@ const SCH = [{ start: '06:30', target: 23 }, { start: '17:00', target: 24 }, { s
   const webhookPort = 52000 + Math.floor(Math.random() * 1000);
   const platform = new api.Platform(log, {
     platform: 'KlimaVezerlo', mode: 'eles', webhookPort,
+    louver: { nappali: 75 },
     rooms: [{ id: 'nappali', name: 'Nappali szoba', acName: 'Nappali', buttons: true, initialBias: 2, schedule: SCH }],
   }, api);
   api.emit('didFinishLaunching');
@@ -178,6 +180,15 @@ const SCH = [{ start: '06:30', target: 23 }, { start: '17:00', target: 24 }, { s
     const n = writes.length;
     await platform.tick(room, { force: true });
     assert.strictEqual(writes.length, n);
+  });
+  await t('légterelő lap visszaállítása 75%-ra', async () => {
+    chars['2.41'] = 0; platform.st(room).lastLouverAt = 0;
+    await platform.tick(room, {});
+    assert.strictEqual(chars['2.41'], 75);
+  });
+  await t('napló letöltő oldal', async () => {
+    const body = await new Promise((res, rej) => http.get(`http://127.0.0.1:${webhookPort}/naplo`, r => { let b = ''; r.on('data', c => (b += c)); r.on('end', () => res(b)); }).on('error', rej));
+    assert.ok(body.includes('klima-') && body.includes('.csv'), body);
   });
   platform.server.close(); hapSrv.close();
   platform.saveState(true);
