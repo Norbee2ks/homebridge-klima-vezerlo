@@ -181,6 +181,14 @@ const SCH = [{ start: '06:30', target: 23 }, { start: '17:00', target: 24 }, { s
     await platform.tick(room, { force: true });
     assert.strictEqual(writes.length, n);
   });
+  await t('megfigyelő mód: rögzített ventilátor 70%', async () => {
+    platform.config.fan = { nappali: 70, ej: 70 };
+    chars['2.14'] = 41; platform.st(room).lastFanFixAt = 0;
+    const realNow = Date.now; Date.now = () => new Date(2026, 10, 27, 10, 0).getTime();
+    try { await platform.tick(room, {}); } finally { Date.now = realNow; }
+    assert.strictEqual(chars['2.14'], 70);
+    delete platform.config.fan;
+  });
   await t('légterelő lapok visszaállítása (fel-le 100, oldal 75)', async () => {
     chars['2.41'] = 0; chars['2.43'] = 25; platform.st(room).lastLouverAt = 0;
     await platform.tick(room, {});

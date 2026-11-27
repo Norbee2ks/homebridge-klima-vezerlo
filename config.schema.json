@@ -198,6 +198,30 @@
             "maximum": 100
           }
         }
+      },
+      "fan": {
+        "title": "Ventilátor rögzítése megfigyelő módban (%, üresen: nem nyúl hozzá)",
+        "type": "object",
+        "properties": {
+          "nappali": {
+            "title": "Nappali, nappal (6:30–23:00)",
+            "type": "integer",
+            "minimum": 20,
+            "maximum": 100
+          },
+          "halo": {
+            "title": "Háló, nappal (6:30–23:00)",
+            "type": "integer",
+            "minimum": 20,
+            "maximum": 100
+          },
+          "ej": {
+            "title": "Éjjel (23:00–6:30), mindkét szoba",
+            "type": "integer",
+            "minimum": 20,
+            "maximum": 100
+          }
+        }
       }
     }
   }

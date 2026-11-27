@@ -514,6 +514,20 @@ class KlimaVezerloPlatform {
       }
     }
 
+    // 7c) rögzített ventilátor (megfigyelő módban is), ha be van állítva: fan.{szoba} nappal, fan.ej éjjel
+    const F = this.config.fan || {};
+    if (this.mode !== 'eles' && ac && a && a.active === 1 && ac.refs.fan && typeof a.fan === 'number') {
+      const wantFan = rt.period.night ? (typeof F.ej === 'number' ? F.ej : null) : (typeof F[room.id] === 'number' ? F[room.id] : null);
+      if (wantFan !== null && Math.abs(a.fan - wantFan) >= 5 && now - (st.lastFanFixAt || 0) >= 2 * 60000) {
+        try {
+          await hap.writeAc(ac, { fan: wantFan });
+          st.lastFanFixAt = now;
+          this.log.info(`[${room.name}] ventilátor beállítva: ${a.fan}% → ${wantFan}%`);
+          this.row(room, 'ventilator', { megjegyzes: `${a.fan} -> ${wantFan}` });
+        } catch (e) { this.throttledError('fan_' + room.id, `[${room.name}] ventilátor írási hiba: ${e.message}`); }
+      }
+    }
+
     // 8) HomeKit csempe frissítése
     const ui = this.ui[room.id];
     if (ui) {
