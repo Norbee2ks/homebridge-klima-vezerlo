@@ -224,7 +224,7 @@ class KlimaVezerloPlatform {
       szobaho: this.isFresh(st) ? st.temp : null, para: st.hum, akku: st.batt, kulso: this.outdoor,
       menetrend_cel: rt.target, eltolas: st.offset, szoba_cel: rt.roomTarget, tanult: st.bias,
       klima_akt_cel: a ? a.heat : null, klima_sajat_ho: a ? a.cur : null, vent_akt: a ? a.fan : null,
-      klima_be: a ? a.active : null, lap_poz: a ? a.louverPos : null, lap_szog: a ? a.louverTilt : null,
+      klima_be: a ? a.active : null, lap_poz: a ? a.louverPos : null, lap_szog: a ? a.louverTilt : null, lap_oldal: a ? a.louverH : null,
       ...extra,
     });
   }
@@ -488,15 +488,28 @@ class KlimaVezerloPlatform {
       }
     }
 
-    // 7b) légterelő lap rögzítése (ha be van állítva) – minden módban, mert ez nem szabályozás, csak beállítás tartása
-    const lv = this.config.louver && this.config.louver[room.id];
-    if (ac && a && typeof lv === 'number' && ac.refs.louverPos && typeof a.louverPos === 'number' && a.active === 1) {
-      if (Math.abs(a.louverPos - lv) >= 1 && now - (st.lastLouverAt || 0) >= 2 * 60000) {
+    // 7b) légterelő lapok rögzítése (fel-le és balra-jobbra), ha be van állítva – minden módban,
+    //     mert ez nem szabályozás, csak egy kézzel választott beállítás megtartása.
+    //     A Midea értékek: 1/25/50/75/100 (fel-le: 100 = legalsó állás).
+    const L = this.config.louver || {};
+    const wantUd = typeof L[room.id] === 'number' ? L[room.id] : null;
+    const wantLr = typeof L[room.id + 'Oldal'] === 'number' ? L[room.id + 'Oldal'] : null;
+    if (ac && a && a.active === 1 && now - (st.lastLouverAt || 0) >= 2 * 60000) {
+      const vals = {}; const notes = [];
+      if (wantUd !== null && ac.refs.louverPos && typeof a.louverPos === 'number' && Math.abs(a.louverPos - wantUd) >= 1) {
+        vals.louverPos = wantUd; notes.push(`fel-le ${a.louverPos} -> ${wantUd}`);
+      }
+      // a HomeKit dőlésszög legfeljebb 90 lehet; a 100-as (szélső) állást 90-nel kérjük, a Midea a legközelebbire kerekít
+      const lrSend = wantLr === null ? null : Math.min(90, Math.max(1, wantLr));
+      if (lrSend !== null && ac.refs.louverH && typeof a.louverH === 'number' && Math.abs(Math.min(90, a.louverH) - lrSend) >= 1) {
+        vals.louverH = lrSend; notes.push(`balra-jobbra ${a.louverH} -> ${wantLr}`);
+      }
+      if (Object.keys(vals).length) {
         try {
-          await hap.writeAc(ac, { louverPos: lv });
+          await hap.writeAc(ac, vals);
           st.lastLouverAt = now;
-          this.log.info(`[${room.name}] légterelő lap visszaállítva: ${a.louverPos}% → ${lv}%`);
-          this.row(room, 'lap', { megjegyzes: `${a.louverPos} -> ${lv}` });
+          this.log.info(`[${room.name}] légterelő visszaállítva: ${notes.join(', ')}`);
+          this.row(room, 'lap', { megjegyzes: notes.join(', ') });
         } catch (e) { this.throttledError('louver_' + room.id, `[${room.name}] lap írási hiba: ${e.message}`); }
       }
     }

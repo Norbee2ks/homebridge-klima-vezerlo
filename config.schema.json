@@ -170,19 +170,31 @@
         ]
       },
       "louver": {
-        "title": "Légterelő lap rögzítése (%, üresen: nem nyúl hozzá)",
+        "title": "Légterelő lapok rögzítése (Midea állás: 1, 25, 50, 75, 100 – üresen: nem nyúl hozzá)",
         "type": "object",
         "properties": {
           "nappali": {
-            "title": "Nappali lap %",
+            "title": "Nappali fel-le (100 = legalsó)",
             "type": "integer",
-            "minimum": 0,
+            "minimum": 1,
+            "maximum": 100
+          },
+          "nappaliOldal": {
+            "title": "Nappali balra-jobbra",
+            "type": "integer",
+            "minimum": 1,
             "maximum": 100
           },
           "halo": {
-            "title": "Háló lap %",
+            "title": "Háló fel-le",
             "type": "integer",
-            "minimum": 0,
+            "minimum": 1,
+            "maximum": 100
+          },
+          "haloOldal": {
+            "title": "Háló balra-jobbra",
+            "type": "integer",
+            "minimum": 1,
             "maximum": 100
           }
         }
